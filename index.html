@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+    />
+
+    <title>Todo Crud Application</title>
+  </head>
+  <body>
+    <div class="conatiner">
+      <div class="row">
+        <div class="col-lg-2"></div>
+        <div class="col-lg-8">
+          <form id="form">
+            <div class="form-group">
+              <label for="todo">Todo</label>
+              <input
+                type="text"
+                class="form-control"
+                id="todoUserInput"
+                placeholder="Todo input"
+              />
+              <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+          </form>
+        </div>
+        <div class="col-lg-2"></div>
+      </div>
+      <div class="row">
+        <div class="col-lg-2"></div>
+        <div class="col-lg-8">
+          <ul class="list-group" id="display"></ul>
+        </div>
+        <div class="col-lg-2"></div>
+      </div>
+      <br />
+      <div class="row">
+        <div class="col-lg-2"></div>
+        <div class="col-lg-8">
+          <div class="alert" role="alert" id="message"></div>
+        </div>
+        <div class="col-lg-2"></div>
+      </div>
+    </div>
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script
+      src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+      integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+      integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      $(document).ready(() => {
+        const display = $("#display");
+        const form = $("#form");
+        const todoUserInput = $("#todoUserInput");
+        const message = $("#message");
+        message.hide();
+
+        const displayMessage = (flag, msg) => {
+          if (flag) {
+            message.removeClass("alert-danger");
+            message.addClass("alert-success");
+            message.html(msg);
+            message.show();
+          }
+        };
+
+        const getTodos = () => {
+          fetch("/getTodos", { method: "get" })
+            .then(response => {
+              return response.json();
+            })
+            .then(data => {
+              console.log(data);
+              displayTodos(data);
+            });
+        };
+
+        getTodos();
+
+        const resetTodoInput = () => {
+          todoUserInput.val("");
+        };
+
+        const buildTemplate = (todo, ids) => {
+          return `<li class="list-group-item" id="${ids.listItemId}">
+                    <div class="row">
+                        <div class="col-md-4" id="${ids.todoId}">${
+            todo.todo
+          }</div>
+                        <div class="col-md-4"></div>
+                        <div class="col-md-4 text-right">
+                            <button type="button" class="btn btn-secondary" id="${
+                              ids.editId
+                            }">Edit</button>    
+                            <button type="button" class="btn btn-danger" id="${
+                              ids.deleteId
+                            }">Delete</button>
+                        </div>
+                    </div>
+                </li>`;
+        };
+
+        const deleteTodo = (todo, listItemId, deleteId) => {
+          let deleteBtn = $(`#${deleteId}`);
+          deleteBtn.click(() => {
+            fetch(`/${todo._id}`, {
+              method: "delete"
+            })
+              .then(res => {
+                return res.json();
+              })
+              .then(data => {
+                if (data.ok == 1) {
+                  $(`#${listItemId}`).remove();
+                }
+              });
+          });
+        };
+
+        const editTodo = (todo, todoId, editId) => {
+          let editBtn = $(`#${editId}`);
+          editBtn.click(() => {
+            fetch(`/${todo._id}`, {
+              method: "put",
+              headers: {
+                "Content-Type": "application/json; charset=utf-8"
+              },
+              body: JSON.stringify({ todo: todoUserInput.val() })
+            })
+              .then(res => {
+                return res.json();
+              })
+              .then(data => {
+                if (data.ok == 1) {
+                  let todoIndex = $(`#${todoId}`);
+                  todoIndex.html(data.value.todo);
+                  resetTodoInput();
+                }
+              });
+          });
+        };
+
+        const buildIds = todo => {
+          return {
+            editId: "edit_" + todo._id,
+            deleteId: "delete_" + todo._id,
+            listItemId: "listItem_" + todo._id,
+            todoId: "todo_" + todo._id
+          };
+        };
+
+        const displayTodos = data => {
+          data.forEach(todo => {
+            let ids = buildIds(todo);
+            display.append(buildTemplate(todo, ids));
+            editTodo(todo, ids.todoId, ids.editId);
+            deleteTodo(todo, ids.listItemId, ids.deleteId);
+          });
+        };
+
+        form.submit(e => {
+          e.preventDefault();
+          fetch("/", {
+            method: "post",
+            body: JSON.stringify({ todo: todoUserInput.val() }),
+            headers: {
+              "Content-Type": "application/json; charset=utf-8"
+            }
+          })
+            .then(res => {
+              return res.json();
+            })
+            .then(data => {
+              if (!data.error) {
+                if (data.result.ok == 1 && data.result.n == 1) {
+                  let ids = buildIds(data.documents);
+                  display.append(buildTemplate(data.documents, ids));
+                  displayMessage(true, data.msg);
+                }
+              } else displayMessage(false, data.error.message);
+              resetTodoInput();
+            });
+        });
+      });
+    </script>
+  </body>
+</html>
