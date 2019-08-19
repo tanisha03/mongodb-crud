@@ -5,10 +5,10 @@ It performs the functionality of a basic app which allows to create, delete, edi
 designed using basic HTML, CSS and Bootstrap. It uses Node.js and express in the backend and the MongoDB as the database.
 
 ## Installation
-Use the basic git command to clone the repository
+Use the basic git command to clone the repository in the favourable location
 
 ~~~
-jhj
+git clone https://github.com/tanisha03/mongodb-crud.git
 ~~~
 
 After the installation is complete, run the following command to ensure all the depencies have been installed in the node_modules 
